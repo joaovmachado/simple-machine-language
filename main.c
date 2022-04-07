@@ -22,37 +22,30 @@ enum mnemonics {
   HALT = 43
 };
 
+#define MEM_ADDR_SIZE 100
+
+void load(int memory[], size_t memory_arr_size);
 void execute(unsigned int opcode, int op, int *mem, int *accumulatorPtr, int *instructionCounterPtr);
 void memoryDump(const int const *mem, const int const *a, const int const *ic,
                 const int const *ir, const int const *opcode, const int const *opr);
 
 int main(void) {
-  int memory[99] = {0};
-
+  // initializing all memory in 0
+  int memory[MEM_ADDR_SIZE] = {0};
+  // registers
   int accumulator = 0, instructionCounter = 0, instructionRegister = 0,
       operationCode = 0, operand = 0;
 
   puts("Welcome to Simpletron!\n\n"
        "Please enter your program one instruction (or data word) at a time.\n"
-       "Type the sentinel -99999 to stop entering "
-       "your program.\n");
+       "Type the sentinel -99999 to stop entering your program.\n");
 
-  for (size_t i = 0; i < 100; i++) {
-    do {
-      printf("%02zu ? ", i);
-      scanf("%d", &memory[i]);
-    } while (memory[i] < -9999 & memory[i] != -99999 || memory[i] > 9999);
-
-    if (memory[i] == -99999) {
-      memory[i] = 0;
-      break;
-    }
-  }
+  load(memory, MEM_ADDR_SIZE);
 
   puts("\n*** Program loading completed ***");
   puts("*** Program execution begins ***\n");
 
-  while (instructionCounter < 100 && operationCode != 43) {
+  while (instructionCounter < MEM_ADDR_SIZE && operationCode != 43) {
     instructionRegister = memory[instructionCounter];
     operationCode = instructionRegister / 100; // fetch opcode
     operand = instructionRegister % 100;       // fetch operand
@@ -70,6 +63,20 @@ int main(void) {
   return 0;
 }
 
+void load(int memory[], size_t memory_arr_size) {
+  for (size_t i = 0; i < memory_arr_size; i++) {
+    do {
+      printf("%02zu ? ", i);
+      scanf("%d", &memory[i]);
+    } while (memory[i] < -9999 & memory[i] != -99999 || memory[i] > 9999);
+
+    if (memory[i] == -99999) {
+      memory[i] = 0;
+      break;
+    }
+  }
+}
+
 void execute(unsigned int opcode, int op, int *mem, int *accumulatorPtr, int *instructionCounterPtr) {
   enum mnemonics instruction = opcode;
 
@@ -81,40 +88,39 @@ void execute(unsigned int opcode, int op, int *mem, int *accumulatorPtr, int *in
       scanf("%d", &mem[op]);
     } while (mem[op] < -9999 || mem[op] > 9999); // verify memory limit store value
     
-    *instructionCounterPtr++;
+    (*instructionCounterPtr)++;
     break;
   case WRITE:
-    printf("%s", "> ");
-    printf("%d", mem[op]);
-    *instructionCounterPtr++;
+    printf("> %d", mem[op]);
+    (*instructionCounterPtr)++;
     break;
     
   // Data-transfer operations
   case LOAD:
     *accumulatorPtr = mem[op];
-    *instructionCounterPtr++;
+    (*instructionCounterPtr)++;
     break;
   case STORE:
     mem[op] = *accumulatorPtr;
-    *instructionCounterPtr++;
+    (*instructionCounterPtr)++;
     break;
 
   // Arithmetic operations
   case ADD:
     *accumulatorPtr += mem[op];
-    *instructionCounterPtr++;
+    (*instructionCounterPtr)++;
     break;
   case SUB:
     *accumulatorPtr -= mem[op];
-    *instructionCounterPtr++;
+    (*instructionCounterPtr)++;
     break;
   case MUL:
     *accumulatorPtr *= mem[op];
-    *instructionCounterPtr++;
+    (*instructionCounterPtr)++;
     break;
   case DIV:
     *accumulatorPtr /= mem[op];
-    *instructionCounterPtr++;
+    (*instructionCounterPtr)++;
     break;
   
   // Transfer-of-control operations
@@ -124,10 +130,15 @@ void execute(unsigned int opcode, int op, int *mem, int *accumulatorPtr, int *in
   case BRANCHNEG:
     if (*accumulatorPtr < 0)
       *instructionCounterPtr = op;
+    else {
+      (*instructionCounterPtr)++;
+    }
     break;
   case BRANCHZERO:
     if (*accumulatorPtr == 0)
       *instructionCounterPtr = op;
+    else
+      (*instructionCounterPtr)++;
     break;
   }
 }
